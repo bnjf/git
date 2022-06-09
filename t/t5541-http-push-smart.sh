@@ -80,6 +80,25 @@ test_expect_success 'push to remote repository (standard)' '
 	 test $HEAD = $(git rev-parse --verify HEAD))
 '
 
+test_expect_success 'push to remote repository (standard) with sending Accept-Language' '
+	cat >exp <<-\EOF &&
+	=> Send header: Accept-Language: zh-CN, en;q=0.9, *;q=0.8
+	=> Send header: Accept-Language: zh-CN, en;q=0.9, *;q=0.8
+	EOF
+
+	cd "$ROOT_PATH"/test_repo_clone &&
+	: >path_lang &&
+	git add path_lang &&
+	test_tick &&
+	git commit -m path_lang &&
+	HEAD=$(git rev-parse --verify HEAD) &&
+	GIT_TRACE_CURL=true LANGUAGE="zh_CN:en" git push -v -v 2>err &&
+	! grep "Expect: 100-continue" err &&
+
+	grep "=> Send header: Accept-Language:" err >err.language &&
+	test_cmp exp err.language
+'
+
 test_expect_success 'push already up-to-date' '
 	git push
 '
